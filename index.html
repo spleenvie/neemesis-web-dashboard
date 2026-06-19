@@ -384,6 +384,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+<script src="js/data.js"></script>
 <script src="js/sync.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
@@ -398,14 +399,6 @@ const missionStatusLabel={'en_attente':'En attente','en_cours':'En cours','termi
 const missionStatusClass={'en_attente':'p-paused','en_cours':'p-active','termine':'p-inactive','annule':'p-ended'};
 const paidClass={'oui':'p-active','non':'p-ended','partiel':'p-paused'};
 const paidLabel={'oui':'Payé','non':'Non payé','partiel':'Partiel'};
-
-function emptyData(){return{
-month:new Date().getMonth(),nid:1,talentFilter:'',missionTab:'all',openTalentId:null,
-tasks:{week:[],admin:[],brand:[],biz:[],ops:[]},
-talents:[],missions:[],revenues:[],notes:[],
-rev:{r:[0,0,0,0,0,0,0,0,0,0,0,0],o:[0,0,0,0,0,0,0,0,0,0,0,0]}
-};}
-window.emptyData=emptyData;
 
 function defaultData(){return{
 month:new Date().getMonth(),nid:200,talentFilter:'',missionTab:'all',openTalentId:null,
@@ -433,6 +426,7 @@ rev:{r:[0,0,0,70000,0,0,0,0,0,0,0,0],o:[300000,300000,400000,400000,500000,50000
 let S=null;
 function activePageName(){const p=document.querySelector('.page.active');return p?p.id.replace('page-',''):'vue';}
 function onDataReady(){
+if(!S||!S.tasks)S=emptyData();
 const now=new Date();
 document.getElementById('date-lbl').textContent=DAYS[now.getDay()]+' '+now.getDate()+' '+MONTHS[now.getMonth()]+' '+now.getFullYear();
 document.getElementById('month-sel').value=S.month;

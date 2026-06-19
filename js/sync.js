@@ -64,7 +64,29 @@ const NeemSync = (() => {
     } catch (e) {}
   }
 
+  function formatFirebaseError(e) {
+    const code = e && e.code ? e.code : '';
+    if (code === 'permission-denied') {
+      return 'Accès Firestore refusé — publiez firestore.rules dans la console Firebase.';
+    }
+    if (code === 'unauthenticated') {
+      return 'Session expirée — reconnectez-vous.';
+    }
+    if (code === 'unavailable' || code === 'deadline-exceeded') {
+      return 'Firestore indisponible — vérifiez votre connexion.';
+    }
+    return 'Impossible de charger les données cloud';
+  }
+
+  function ensureState() {
+    if (!window.S || !window.S.tasks) {
+      window.S = typeof window.emptyData === 'function' ? window.emptyData() : loadLocal() || {};
+    }
+    return window.S;
+  }
+
   function applyRemote(data) {
+    if (!data || !data.tasks) return;
     window.S = data;
     backupLocal(data);
     if (typeof window.onDataRemote === 'function') window.onDataRemote();
@@ -105,7 +127,7 @@ const NeemSync = (() => {
       (err) => {
         console.error('Firestore listener error', err);
         setStatus('error');
-        toast('Erreur de synchronisation');
+        toast(formatFirebaseError(err));
       }
     );
   }
@@ -118,17 +140,21 @@ const NeemSync = (() => {
       await seedIfEmpty();
       const snap = await docRef().get();
       if (snap.exists) {
-        applyRemote(snap.data().data);
-      } else if (!window.S) {
-        window.S = typeof window.emptyData === 'function' ? window.emptyData() : loadLocal();
+        const payload = snap.data().data;
+        if (payload && payload.tasks) applyRemote(payload);
+        else ensureState();
+      } else {
+        ensureState();
       }
       startListener();
       setStatus('synced');
       if (typeof window.onDataReady === 'function') window.onDataReady();
     } catch (e) {
-      console.error(e);
+      console.error('NeemSync afterAuth error:', e);
+      ensureState();
       setStatus('error');
-      toast('Impossible de charger les données cloud');
+      toast(formatFirebaseError(e));
+      if (typeof window.onDataReady === 'function') window.onDataReady();
     }
   }
 
