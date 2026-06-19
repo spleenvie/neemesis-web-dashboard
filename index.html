@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neemesis — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--black:#0B0F14;--white:#F6F5F1;--accent:#2A6B5C;--accent2:#3D8B75;
+--accent-light:#E0F0EC;--gold:#C4923A;--gold-light:#FBF3E4;
+--mid:#B5B2AB;--light:#ECEAE4;--border:rgba(0,0,0,0.09);
+--text:#0B0F14;--text2:#4F5057;--text3:#888780;
+--surface:#ffffff;--surface2:#F6F5F1;
+--ok:#1D9E75;--warn:#BA7517;--info:#185FA5;--danger:#993C1D;
+--sw:250px;--r:10px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);min-height:100vh;display:flex}
+.sidebar{width:var(--sw);min-height:100vh;background:var(--black);display:flex;flex-direction:column;padding:24px 0;position:fixed;top:0;left:0;z-index:100}
+.logo-area{padding:0 20px 24px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:11px}
+.logo-mark{width:38px;height:38px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:15px;color:#fff;letter-spacing:-0.5px}
+.logo-name{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;color:var(--white);letter-spacing:-0.5px}
+.logo-sub{font-size:10px;color:#4F5057;letter-spacing:.06em;margin-top:1px}
+.nav-section{padding:16px 12px 4px;font-size:9px;color:#444441;text-transform:uppercase;letter-spacing:.12em;font-weight:500}
+.nav{padding:0 12px;display:flex;flex-direction:column;gap:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;font-size:13px;color:#888780;cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:rgba(255,255,255,0.05);color:var(--white)}
+.nav-item.active{background:rgba(42,107,92,0.18);color:var(--white)}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:transparent;flex-shrink:0;transition:background .15s}
+.nav-item.active .nav-dot{background:var(--accent2)}
+.sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid rgba(255,255,255,0.07)}
+.export-btn{width:100%;background:rgba(42,107,92,0.15);border:1px solid rgba(42,107,92,0.3);color:var(--accent2);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;text-align:center;transition:all .15s;display:block;margin-bottom:8px}
+.export-btn:hover{background:rgba(42,107,92,0.25)}
+.import-label{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#888780;border-radius:8px;padding:9px 12px;font-size:12px;cursor:pointer;text-align:center;display:block;transition:all .15s}
+.import-label:hover{background:rgba(255,255,255,0.07);color:var(--white)}
+.sidebar-credit{font-size:10px;color:#333330;margin-top:10px;text-align:center}
+.main{margin-left:var(--sw);flex:1;padding:32px 36px;min-height:100vh}
+.page{display:none}.page.active{display:block}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+.page-title{font-family:'Space Grotesk',sans-serif;font-size:22px;font-weight:700;letter-spacing:-0.5px}
+.page-sub{font-size:13px;color:var(--text3);margin-top:3px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px}
+.section-label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin:22px 0 10px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:22px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px}
+.kpi-label{font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.kpi-val{font-family:'Space Grotesk',sans-serif;font-size:24px;font-weight:700;letter-spacing:-0.5px}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.talent-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--light);cursor:pointer;transition:opacity .15s}
+.talent-row:last-child{border-bottom:none}
+.talent-row:hover{opacity:.75}
+.avatar{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:700;flex-shrink:0;color:#fff}
+.talent-info{flex:1;min-width:0}
+.talent-name{font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.talent-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.action-btn{background:none;border:none;cursor:pointer;font-size:17px;color:var(--text3);padding:0 4px;opacity:.45;line-height:1;flex-shrink:0}
+.action-btn:hover{opacity:.8}
+.pill{font-size:10px;font-weight:500;padding:3px 9px;border-radius:20px;white-space:nowrap}
+.p-active{background:#E0F0EC;color:#1B5948}
+.p-inactive{background:var(--light);color:var(--text3)}
+.p-new{background:#E6F1FB;color:#0C447C}
+.p-paused{background:#FBF3E4;color:#7A5210}
+.p-ended{background:#FCE8E8;color:#791F1F}
+.p-music{background:#EDE8FD;color:#3B2F8A}
+.p-photo{background:#E0F0EC;color:#1B5948}
+.p-video{background:#FBF3E4;color:#7A5210}
+.p-fashion{background:#FDE8F3;color:#7A1255}
+.p-art{background:#FEECDE;color:#7A3310}
+.task-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--light);font-size:13px;cursor:pointer}
+.task-row:last-child{border-bottom:none}
+.task-row:hover{opacity:.8}
+.cb{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--mid);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:var(--surface)}
+.cb.done{background:var(--ok);border-color:var(--ok)}
+.cb.done::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
+.task-text{flex:1;line-height:1.45}
+.task-text.done{text-decoration:line-through;color:var(--text3)}
+.add-row{display:flex;gap:8px;margin-top:12px}
+.add-input{flex:1;font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 11px;border:1px solid var(--border);border-radius:7px;background:var(--surface2);color:var(--text);outline:none}
+.add-input:focus{border-color:var(--accent)}
+.add-btn{background:var(--accent);color:#fff;border:none;border-radius:7px;padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+.add-btn:hover{opacity:.85}
+.prog-wrap{background:var(--light);border-radius:20px;height:7px;overflow:hidden}
+.prog-fill{height:100%;border-radius:20px;background:var(--accent);transition:width .4s}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:14px;padding:28px;width:580px;max-width:96vw;max-height:92vh;overflow-y:auto}
+.modal-title{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:700;margin-bottom:22px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-field{display:flex;flex-direction:column;gap:5px}
+.form-field.full{grid-column:1/-1}
+.form-label{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.form-input,.form-select,.form-textarea{font-family:'DM Sans',sans-serif;font-size:13px;padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);outline:none;width:100%}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent)}
+.form-textarea{resize:vertical;min-height:70px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:22px}
+.btn-primary{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 20px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{background:none;color:var(--text2);border:1px solid var(--border);border-radius:8px;padding:9px 20px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer}
+.btn-secondary:hover{background:var(--light)}
+.note-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:12px}
+.note-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.note-title{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600}
+.notes-area{width:100%;font-family:'DM Sans',sans-serif;font-size:13px;line-height:1.65;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text);resize:vertical;outline:none;min-height:80px}
+.notes-area:focus{border-color:var(--accent)}
+.detail-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px;margin-top:16px;display:none}
+.detail-panel.open{display:block}
+.detail-row{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--light);font-size:13px;flex-wrap:wrap}
+.detail-row:last-child{border-bottom:none}
+.detail-label{color:var(--text3);min-width:160px;flex-shrink:0;font-size:12px}
+.mission-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--light);font-size:13px}
+.mission-row:last-child{border-bottom:none}
+.mission-info{flex:1;min-width:0}
+.mission-name{font-weight:500}
+.mission-meta{font-size:11px;color:var(--text3);margin-top:2px}
+.mission-status{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.rev-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--light);font-size:13px}
+.rev-row:last-child{border-bottom:none}
+.tab-bar{display:flex;gap:4px;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:4px;width:fit-content}
+.tab-btn{padding:7px 16px;border-radius:6px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;color:var(--text3);transition:all .15s}
+.tab-btn.active{background:var(--accent);color:#fff}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--black);color:#fff;padding:11px 18px;border-radius:9px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999}
+#toast.show{opacity:1}
+@media(max-width:900px){
+.sidebar{width:60px}
+.logo-name,.logo-sub,.nav-item span,.sidebar-bottom,.nav-section{display:none}
+.main{margin-left:60px;padding:20px 14px}
+.two-col{grid-template-columns:1fr}
+.form-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+<div class="logo-area">
+<div class="logo-mark">Nm</div>
+<div><div class="logo-name">Neemesis</div><div class="logo-sub">Agency Dashboard</div></div>
+</div>
+<div class="nav-section">Agence</div>
+<nav class="nav">
+<button class="nav-item active" onclick="nav('vue',this)"><div class="nav-dot"></div><span>Vue d'ensemble</span></button>
+<button class="nav-item" onclick="nav('taches',this)"><div class="nav-dot"></div><span>Tâches agence</span></button>
+<button class="nav-item" onclick="nav('revenus',this)"><div class="nav-dot"></div><span>Revenus & commissions</span></button>
+<button class="nav-item" onclick="nav('notes',this)"><div class="nav-dot"></div><span>Notes & réunions</span></button>
+</nav>
+<div class="nav-section" style="margin-top:12px">Talents</div>
+<nav class="nav">
+<button class="nav-item" onclick="nav('talents',this)"><div class="nav-dot"></div><span>Fiches talents</span></button>
+<button class="nav-item" onclick="nav('missions',this)"><div class="nav-dot"></div><span>Missions & projets</span></button>
+</nav>
+<div class="sidebar-bottom">
+<button class="export-btn" onclick="exportData()">⬇ Exporter JSON</button>
+<label class="import-label">⬆ Importer JSON<input type="file" accept=".json" style="display:none" onchange="importData(this)"></label>
+<div class="sidebar-credit">Neemesis · Cotonou & Londres</div>
+</div>
+</aside>
+
+<main class="main">
+
+<!-- VUE D'ENSEMBLE -->
+<div id="page-vue" class="page active">
+<div class="page-header">
+<div><div class="page-title">Vue d'ensemble</div><div class="page-sub" id="date-lbl"></div></div>
+<select style="font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer" id="month-sel" onchange="S.month=+this.value;save();renderVue()">
+<option value="0">Janvier</option><option value="1">Février</option><option value="2">Mars</option><option value="3">Avril</option><option value="4">Mai</option><option value="5">Juin</option><option value="6">Juillet</option><option value="7">Août</option><option value="8">Septembre</option><option value="9">Octobre</option><option value="10">Novembre</option><option value="11">Décembre</option>
+</select>
+</div>
+<div class="kpi-grid" id="vue-kpis"></div>
+<div class="two-col">
+<div>
+<div class="section-label">Revenus vs Objectif (FCFA)</div>
+<div class="card"><div style="position:relative;height:200px"><canvas id="c-rev"></canvas></div></div>
+</div>
+<div>
+<div class="section-label">Répartition des talents par discipline</div>
+<div class="card">
+<div id="donut-legend" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;font-size:11px;color:var(--text3)"></div>
+<div style="position:relative;height:175px"><canvas id="c-donut"></canvas></div>
+</div>
+</div>
+</div>
+<div class="section-label">Progression des tâches agence</div>
+<div class="card"><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px" id="prog-blocks"></div></div>
+<div class="section-label">Missions en cours</div>
+<div class="card" id="vue-missions-list"></div>
+</div>
+
+<!-- TACHES -->
+<div id="page-taches" class="page">
+<div class="page-header"><div class="page-title">Tâches agence</div><div style="font-size:13px;color:var(--text3)" id="tasks-summary"></div></div>
+<div class="two-col">
+<div>
+<div class="section-label">Cette semaine</div>
+<div class="card"><div id="tl-week"></div><div class="add-row"><input class="add-input" id="in-week" placeholder="Nouvelle tâche..." onkeydown="if(event.key==='Enter')addTask('week',this)"><button class="add-btn" onclick="addTask('week',document.getElementById('in-week'))">+</button></div></div>
+</div>
+<div>
+<div class="section-label">Administratif & légal</div>
+<div class="card"><div id="tl-admin"></div><div class="add-row"><input class="add-input" id="in-admin" placeholder="Nouvelle tâche..." onkeydown="if(event.key==='Enter')addTask('admin',this)"><button class="add-btn" onclick="addTask('admin',document.getElementById('in-admin'))">+</button></div></div>
+</div>
+</div>
+<div class="section-label">Identité visuelle & communication</div>
+<div class="card"><div id="tl-brand"></div><div class="add-row"><input class="add-input" id="in-brand" placeholder="Nouvelle tâche marque..." onkeydown="if(event.key==='Enter')addTask('brand',this)"><button class="add-btn" onclick="addTask('brand',document.getElementById('in-brand'))">+</button></div></div>
+<div class="section-label">Développement commercial</div>
+<div class="card"><div id="tl-biz"></div><div class="add-row"><input class="add-input" id="in-biz" placeholder="Nouvelle tâche..." onkeydown="if(event.key==='Enter')addTask('biz',this)"><button class="add-btn" onclick="addTask('biz',document.getElementById('in-biz'))">+</button></div></div>
+<div class="section-label">Opérations & outils internes</div>
+<div class="card"><div id="tl-ops"></div><div class="add-row"><input class="add-input" id="in-ops" placeholder="Nouvelle tâche ops..." onkeydown="if(event.key==='Enter')addTask('ops',this)"><button class="add-btn" onclick="addTask('ops',document.getElementById('in-ops'))">+</button></div></div>
+</div>
+
+<!-- REVENUS -->
+<div id="page-revenus" class="page">
+<div class="page-header"><div class="page-title">Revenus & commissions</div><button class="btn-primary" onclick="openRevModal()">+ Ajouter entrée</button></div>
+<div class="kpi-grid" id="rev-kpis"></div>
+<div class="section-label">Toutes les entrées</div>
+<div class="card"><div id="rev-list"></div></div>
+</div>
+
+<!-- NOTES -->
+<div id="page-notes" class="page">
+<div class="page-header"><div class="page-title">Notes & réunions</div><button class="btn-primary" onclick="addNote()">+ Nouvelle note</button></div>
+<div id="notes-list"></div>
+</div>
+
+<!-- TALENTS -->
+<div id="page-talents" class="page">
+<div class="page-header"><div class="page-title">Fiches talents</div><button class="btn-primary" onclick="openTalentModal()">+ Nouveau talent</button></div>
+<div class="kpi-grid" id="talent-kpis"></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+<button class="pill p-active" style="cursor:pointer;border:none;padding:5px 12px;font-size:12px" onclick="filterTalents('')">Tous</button>
+<button class="pill p-music" style="cursor:pointer;border:none;padding:5px 12px;font-size:12px" onclick="filterTalents('Musique')">Musique</button>
+<button class="pill p-photo" style="cursor:pointer;border:none;padding:5px 12px;font-size:12px" onclick="filterTalents('Photographie')">Photo</button>
+<button class="pill p-video" style="cursor:pointer;border:none;padding:5px 12px;font-size:12px" onclick="filterTalents('Vidéographie')">Vidéo</button>
+<button class="pill p-fashion" style="cursor:pointer;border:none;padding:5px 12px;font-size:12px" onclick="filterTalents('Stylisme')">Stylisme</button>
+<button class="pill p-art" style="cursor:pointer;border:none;padding:5px 12px;font-size:12px" onclick="filterTalents('Arts visuels')">Arts visuels</button>
+</div>
+<div class="card" id="talent-list"></div>
+<div class="detail-panel" id="talent-detail">
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+<div style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:700" id="detail-talent-name"></div>
+<div style="display:flex;gap:8px">
+<button class="btn-primary" style="padding:6px 14px;font-size:12px" onclick="editTalentById(S.openTalentId)">Modifier</button>
+<button class="btn-secondary" style="padding:6px 14px;font-size:12px" onclick="closeTalentDetail()">Fermer</button>
+</div>
+</div>
+<div id="detail-talent-body"></div>
+<div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--light)">
+<div style="font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;margin-bottom:10px">Tâches liées à ce talent</div>
+<div id="detail-talent-tasks"></div>
+<div class="add-row"><input class="add-input" id="in-talent-task" placeholder="Ajouter une tâche pour ce talent..." onkeydown="if(event.key==='Enter')addTalentTask()"><button class="add-btn" onclick="addTalentTask()">+</button></div>
+</div>
+</div>
+</div>
+
+<!-- MISSIONS -->
+<div id="page-missions" class="page">
+<div class="page-header"><div class="page-title">Missions & projets</div><button class="btn-primary" onclick="openMissionModal()">+ Nouvelle mission</button></div>
+<div class="kpi-grid" id="mission-kpis"></div>
+<div class="tab-bar">
+<button class="tab-btn active" onclick="setMissionTab('all',this)">Toutes</button>
+<button class="tab-btn" onclick="setMissionTab('en_cours',this)">En cours</button>
+<button class="tab-btn" onclick="setMissionTab('termine',this)">Terminées</button>
+<button class="tab-btn" onclick="setMissionTab('en_attente',this)">En attente</button>
+</div>
+<div class="card" id="mission-list"></div>
+</div>
+
+</main>
+
+<!-- MODAL TALENT -->
+<div class="modal-bg" id="modal-talent" onclick="if(event.target===this)closeTalentModal()">
+<div class="modal">
+<div class="modal-title" id="modal-talent-title">Nouveau talent</div>
+<div class="form-grid">
+<div class="form-field full"><label class="form-label">Nom complet *</label><input class="form-input" id="t-name" placeholder="Ex: Adjoa Mensah"></div>
+<div class="form-field"><label class="form-label">Discipline</label>
+<select class="form-select" id="t-discipline"><option value="">— Choisir —</option><option>Musique</option><option>Photographie</option><option>Vidéographie</option><option>Stylisme</option><option>Arts visuels</option><option>Danse</option><option>Autre</option></select>
+</div>
+<div class="form-field"><label class="form-label">Spécialité</label><input class="form-input" id="t-specialty" placeholder="Ex: Afrobeats, Portrait, Mode…"></div>
+<div class="form-field"><label class="form-label">Téléphone</label><input class="form-input" id="t-phone" placeholder="+229 97 00 00 00" type="tel"></div>
+<div class="form-field"><label class="form-label">Email</label><input class="form-input" id="t-email" placeholder="talent@exemple.com" type="email"></div>
+<div class="form-field"><label class="form-label">Ville / Pays</label><input class="form-input" id="t-location" placeholder="Ex: Cotonou, Bénin"></div>
+<div class="form-field"><label class="form-label">Statut contrat</label>
+<select class="form-select" id="t-contract"><option value="actif">Actif</option><option value="nouveau">Nouveau</option><option value="pause">En pause</option><option value="termine">Terminé</option></select>
+</div>
+<div class="form-field"><label class="form-label">Taux de commission (%)</label><input class="form-input" id="t-commission" placeholder="Ex: 20" type="number" min="0" max="100"></div>
+<div class="form-field"><label class="form-label">Début contrat</label><input class="form-input" id="t-start" type="date"></div>
+<div class="form-field"><label class="form-label">Instagram</label><input class="form-input" id="t-instagram" placeholder="@handle"></div>
+<div class="form-field"><label class="form-label">Portfolio / Lien</label><input class="form-input" id="t-portfolio" placeholder="https://…"></div>
+<div class="form-field"><label class="form-label">Abonnés Instagram</label><input class="form-input" id="t-followers" placeholder="Ex: 12000" type="number"></div>
+<div class="form-field full"><label class="form-label">Notes</label><textarea class="form-textarea" id="t-notes" placeholder="Profil, projets passés, points d'attention…"></textarea></div>
+<div class="form-field full"><label class="form-label">Prochaine action</label><input class="form-input" id="t-next" placeholder="Ex: Envoyer contrat d'ici vendredi"></div>
+</div>
+<div class="modal-actions"><button class="btn-secondary" onclick="closeTalentModal()">Annuler</button><button class="btn-primary" onclick="saveTalent()">Enregistrer</button></div>
+</div>
+</div>
+
+<!-- MODAL MISSION -->
+<div class="modal-bg" id="modal-mission" onclick="if(event.target===this)closeMissionModal()">
+<div class="modal">
+<div class="modal-title" id="modal-mission-title">Nouvelle mission</div>
+<div class="form-grid">
+<div class="form-field full"><label class="form-label">Titre de la mission *</label><input class="form-input" id="m-title" placeholder="Ex: Shooting mode printemps"></div>
+<div class="form-field"><label class="form-label">Talent(s)</label><input class="form-input" id="m-talent" placeholder="Nom du talent"></div>
+<div class="form-field"><label class="form-label">Client / Marque</label><input class="form-input" id="m-client" placeholder="Ex: Maison Kané"></div>
+<div class="form-field"><label class="form-label">Type de mission</label>
+<select class="form-select" id="m-type"><option value="">— Choisir —</option><option>Shooting photo</option><option>Production vidéo</option><option>Prestation musicale</option><option>Styling</option><option>Direction artistique</option><option>Collaboration marque</option><option>Événement</option><option>Autre</option></select>
+</div>
+<div class="form-field"><label class="form-label">Statut</label>
+<select class="form-select" id="m-status"><option value="en_attente">En attente</option><option value="en_cours">En cours</option><option value="termine">Terminée</option><option value="annule">Annulée</option></select>
+</div>
+<div class="form-field"><label class="form-label">Montant total (FCFA)</label><input class="form-input" id="m-amount" placeholder="Ex: 350000" type="number"></div>
+<div class="form-field"><label class="form-label">Commission Neemesis (%)</label><input class="form-input" id="m-commission" placeholder="Ex: 20" type="number" min="0" max="100"></div>
+<div class="form-field"><label class="form-label">Date début</label><input class="form-input" id="m-start" type="date"></div>
+<div class="form-field"><label class="form-label">Date fin</label><input class="form-input" id="m-end" type="date"></div>
+<div class="form-field"><label class="form-label">Payé ?</label>
+<select class="form-select" id="m-paid"><option value="non">Non</option><option value="partiel">Partiel</option><option value="oui">Oui</option></select>
+</div>
+<div class="form-field full"><label class="form-label">Notes</label><textarea class="form-textarea" id="m-notes" placeholder="Brief, livrables, points d'attention…"></textarea></div>
+</div>
+<div class="modal-actions"><button class="btn-secondary" onclick="closeMissionModal()">Annuler</button><button class="btn-primary" onclick="saveMission()">Enregistrer</button></div>
+</div>
+</div>
+
+<!-- MODAL REVENU -->
+<div class="modal-bg" id="modal-rev" onclick="if(event.target===this)closeRevModal()">
+<div class="modal">
+<div class="modal-title">Nouvelle entrée de revenu</div>
+<div class="form-grid">
+<div class="form-field full"><label class="form-label">Description *</label><input class="form-input" id="r-desc" placeholder="Ex: Commission shooting mode — Adjoa"></div>
+<div class="form-field"><label class="form-label">Montant (FCFA)</label><input class="form-input" id="r-amount" placeholder="Ex: 70000" type="number"></div>
+<div class="form-field"><label class="form-label">Type</label>
+<select class="form-select" id="r-type"><option value="commission">Commission talent</option><option value="prestation">Prestation agence</option><option value="retainer">Retainer</option><option value="autre">Autre</option></select>
+</div>
+<div class="form-field"><label class="form-label">Date</label><input class="form-input" id="r-date" type="date"></div>
+<div class="form-field"><label class="form-label">Encaissé ?</label>
+<select class="form-select" id="r-paid"><option value="oui">Oui</option><option value="non">Non</option></select>
+</div>
+<div class="form-field"><label class="form-label">Talent lié</label><input class="form-input" id="r-talent" placeholder="Nom ou laisser vide"></div>
+</div>
+<div class="modal-actions"><button class="btn-secondary" onclick="closeRevModal()">Annuler</button><button class="btn-primary" onclick="saveRev()">Enregistrer</button></div>
+</div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const KEY='neemesis_v1';
+const MONTHS=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const DAYS=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const avatarColors=['#2A6B5C','#3D8B75','#C4923A','#185FA5','#6B4FBB','#C4503A','#1B7A8A'];
+const disciplineClass={'Musique':'p-music','Photographie':'p-photo','Vidéographie':'p-video','Stylisme':'p-fashion','Arts visuels':'p-art','Danse':'p-fashion','Autre':'p-inactive'};
+const contractClass={'actif':'p-active','nouveau':'p-new','pause':'p-paused','termine':'p-ended'};
+const contractLabel={'actif':'Actif','nouveau':'Nouveau','pause':'En pause','termine':'Terminé'};
+const missionStatusLabel={'en_attente':'En attente','en_cours':'En cours','termine':'Terminée','annule':'Annulée'};
+const missionStatusClass={'en_attente':'p-paused','en_cours':'p-active','termine':'p-inactive','annule':'p-ended'};
+const paidClass={'oui':'p-active','non':'p-ended','partiel':'p-paused'};
+const paidLabel={'oui':'Payé','non':'Non payé','partiel':'Partiel'};
+
+function defaultData(){return{
+month:new Date().getMonth(),nid:200,talentFilter:'',missionTab:'all',openTalentId:null,
+tasks:{
+week:[{id:1,text:'Faire le point avec chaque talent actif',done:false},{id:2,text:'Valider les missions en cours',done:false},{id:3,text:'Relancer les factures en attente',done:false}],
+admin:[{id:10,text:'Formaliser les contrats de management',done:false},{id:11,text:'Ouvrir compte bancaire professionnel',done:false},{id:12,text:'Mettre à jour la liste des contacts partenaires',done:false},{id:13,text:'Définir politique de commission par discipline',done:false}],
+brand:[{id:20,text:'Finaliser le logo Neemesis',done:false},{id:21,text:'Créer la charte graphique agence',done:false},{id:22,text:'Rédiger le pitch deck agence',done:false},{id:23,text:'Configurer le compte Instagram Neemesis',done:false},{id:24,text:'Concevoir les templates posts réseaux sociaux',done:false},{id:25,text:'Rédiger la bio et le positionnement agence',done:false},{id:26,text:'Lancer le site vitrine neemesis.co',done:false}],
+biz:[{id:30,text:'Identifier 3 marques à approcher ce mois',done:false},{id:31,text:'Préparer un deck de présentation talents',done:false},{id:32,text:'Contacter 2 organisateurs d\'événements',done:false},{id:33,text:'Établir partenariat avec un studio photo local',done:false}],
+ops:[{id:40,text:'Mettre en place tableau de suivi commissions',done:false},{id:41,text:'Créer modèles de contrats (management & incubation)',done:false},{id:42,text:'Définir processus d\'onboarding talent',done:false},{id:43,text:'Centraliser tous les contacts dans un CRM simple',done:false}]
+},
+talents:[
+{id:101,name:'Kofi Asante',discipline:'Photographie',specialty:'Portrait & mode',phone:'+229 97 11 00 22',email:'kofi@example.com',location:'Cotonou',contract:'actif',commission:20,start:'2025-01-15',instagram:'@kofiasante_photo',portfolio:'https://kofiasante.com',followers:8400,notes:'Très professionnel, disponible pour missions internationales.',next:'Envoyer calendrier shootings avril',tasks:[]},
+{id:102,name:'Aïcha Traoré',discipline:'Musique',specialty:'Afrobeats / R&B',phone:'+229 96 44 55 66',email:'aicha@example.com',location:'Cotonou',contract:'actif',commission:15,start:'2025-02-01',instagram:'@aichatraore',portfolio:'',followers:23000,notes:'Artiste avec forte présence en ligne. Maquette en production.',next:'Suivre la sortie du single',tasks:[]},
+{id:103,name:'Sènan Viho',discipline:'Vidéographie',specialty:'Clip & docu',phone:'+229 95 22 33 44',email:'senan@example.com',location:'Porto-Novo',contract:'nouveau',commission:18,start:'2025-04-03',instagram:'@senanviho',portfolio:'https://senanviho.co',followers:4200,notes:'Nouveau profil, premier contrat en cours de signature.',next:'Finaliser contrat d\'incubation',tasks:[]}
+],
+missions:[
+{id:201,title:'Shooting mode printemps',talent:'Kofi Asante',client:'Maison Kané',type:'Shooting photo',status:'en_cours',amount:350000,commission:20,start:'2025-04-10',end:'2025-04-15',paid:'partiel',notes:'Livrables : 30 photos retouchées. Acompte reçu.'},
+{id:202,title:'Clip «Yen Te» — Aïcha',talent:'Aïcha Traoré',client:'Label indépendant',type:'Production vidéo',status:'en_attente',amount:500000,commission:15,start:'2025-05-01',end:'2025-05-20',paid:'non',notes:'Attente confirmation du budget final.'}
+],
+revenues:[{id:301,desc:'Commission shooting Kofi — Maison Kané',amount:70000,type:'commission',date:'2025-04-12',paid:'oui',talent:'Kofi Asante'}],
+notes:[{id:401,date:'2025-04-08',title:'Réunion équipe — semaine 14',content:'Revue du pipeline. Kofi confirme disponibilité mai-juin. Aïcha : production clip à lancer en mai.'}],
+rev:{r:[0,0,0,70000,0,0,0,0,0,0,0,0],o:[300000,300000,400000,400000,500000,500000,600000,600000,700000,700000,800000,800000]}
+};}
+
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY));if(!S||!S.tasks)S=defaultData();}catch(e){S=defaultData();}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+function nav(name,btn){
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+document.getElementById('page-'+name).classList.add('active');
+if(btn)btn.classList.add('active');
+renderPage(name);
+}
+function renderPage(n){
+if(n==='vue')renderVue();
+if(n==='taches')renderTaches();
+if(n==='revenus')renderRevenus();
+if(n==='notes')renderNotes();
+if(n==='talents')renderTalents();
+if(n==='missions')renderMissions();
+}
+
+const now=new Date();
+document.getElementById('date-lbl').textContent=DAYS[now.getDay()]+' '+now.getDate()+' '+MONTHS[now.getMonth()]+' '+now.getFullYear();
+document.getElementById('month-sel').value=S.month;
+
+function exportData(){
+const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+a.download='neemesis-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+toast('Export réussi ✓');
+}
+function importData(input){
+const file=input.files[0];if(!file)return;
+const reader=new FileReader();
+reader.onload=e=>{
+try{const data=JSON.parse(e.target.result);if(!data.tasks)throw new Error();
+S=data;save();renderPage(document.querySelector('.page.active').id.replace('page-',''));toast('Import réussi ✓');}
+catch{toast('Fichier invalide ✗');}
+};
+reader.readAsText(file);input.value='';
+}
+
+let cRev,cDonut;
+function renderVue(){
+const totalTalents=S.talents.length;
+const activeTalents=S.talents.filter(t=>t.contract==='actif').length;
+const missionsEnCours=S.missions.filter(m=>m.status==='en_cours').length;
+const revMois=S.rev.r[S.month]||0;
+const allTasks=Object.values(S.tasks).flat();
+document.getElementById('vue-kpis').innerHTML=`
+<div class="kpi"><div class="kpi-label">Talents actifs</div><div class="kpi-val" style="color:var(--accent)">${activeTalents}</div><div class="kpi-sub">sur ${totalTalents} au total</div></div>
+<div class="kpi"><div class="kpi-label">Missions en cours</div><div class="kpi-val">${missionsEnCours}</div></div>
+<div class="kpi"><div class="kpi-label">Revenus du mois</div><div class="kpi-val" style="color:var(--gold);font-size:18px">${revMois?(revMois/1000).toFixed(0)+'k':'–'} <span style="font-size:12px;font-weight:400;color:var(--text3)">FCFA</span></div></div>
+<div class="kpi"><div class="kpi-label">Tâches complétées</div><div class="kpi-val" style="color:var(--ok)">${allTasks.filter(t=>t.done).length}<span style="font-size:14px;font-weight:400;color:var(--text3)">/${allTasks.length}</span></div></div>`;
+renderProgBlocks();
+setTimeout(initCharts,60);
+const mc=S.missions.filter(m=>m.status==='en_cours');
+const vml=document.getElementById('vue-missions-list');
+if(!mc.length){vml.innerHTML='<div style="padding:16px;font-size:13px;color:var(--text3)">Aucune mission en cours.</div>';return;}
+vml.innerHTML=mc.map(m=>{const com=Math.round((m.amount||0)*(m.commission||0)/100);
+return`<div class="mission-row"><div class="mission-info"><div class="mission-name">${m.title}</div><div class="mission-meta">${m.talent||'—'} · ${m.client||'—'} · ${m.type||''}</div></div><div class="mission-status"><span class="pill ${missionStatusClass[m.status]}">${missionStatusLabel[m.status]}</span><span style="font-size:11px;color:var(--text3)">Com. ${com?(com/1000).toFixed(0)+'k FCFA':'—'}</span></div></div>`;
+}).join('');
+}
+
+function initCharts(){
+const cr=document.getElementById('c-rev');const cd=document.getElementById('c-donut');
+if(!cr||!cd)return;if(cRev)cRev.destroy();if(cDonut)cDonut.destroy();
+cRev=new Chart(cr,{type:'bar',data:{labels:MONTHS.map(m=>m.slice(0,3)),datasets:[{label:'Réalisé',data:S.rev.r,backgroundColor:'#2A6B5C',borderRadius:4},{label:'Objectif',data:S.rev.o,backgroundColor:'#ECEAE4',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v>=1000?(v/1000)+'k':v,font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},x:{ticks:{font:{size:10}},grid:{display:false}}}}});
+const discMap={};S.talents.forEach(t=>{const d=t.discipline||'Autre';discMap[d]=(discMap[d]||0)+1;});
+const discColors={'Musique':'#7F77DD','Photographie':'#2A6B5C','Vidéographie':'#C4923A','Stylisme':'#C4503A','Arts visuels':'#C4793A','Danse':'#D068A0','Autre':'#888780'};
+const labels=Object.keys(discMap);const data=Object.values(discMap);const bgs=labels.map(l=>discColors[l]||'#888780');
+document.getElementById('donut-legend').innerHTML=labels.map((l,i)=>`<span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:${bgs[i]};display:inline-block"></span>${l} ${data[i]}</span>`).join('');
+cDonut=new Chart(cd,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:bgs,borderWidth:2,borderColor:'#ffffff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false}}}});
+}
+
+function renderProgBlocks(){
+const cats={'Cette semaine':S.tasks.week,'Administratif':S.tasks.admin,'Identité & comm.':S.tasks.brand,'Développement biz':S.tasks.biz,'Opérations':S.tasks.ops};
+document.getElementById('prog-blocks').innerHTML=Object.entries(cats).map(([label,tasks])=>{
+const done=tasks.filter(t=>t.done).length;const total=tasks.length;const pct=total?Math.round(done/total*100):0;
+return`<div style="padding:4px 0"><div style="display:flex;justify-content:space-between;margin-bottom:5px"><span style="font-size:12px;font-weight:500">${label}</span><span style="font-size:12px;color:var(--text3)">${done}/${total}</span></div><div class="prog-wrap"><div class="prog-fill" style="width:${pct}%"></div></div></div>`;
+}).join('');
+}
+
+function renderTaskList(containerId,listKey){
+const el=document.getElementById(containerId);if(!el)return;
+const tasks=S.tasks[listKey]||[];
+if(!tasks.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:6px 0">Aucune tâche.</div>';return;}
+el.innerHTML=tasks.map(t=>`<div class="task-row" onclick="toggleTask('${listKey}',${t.id})"><div class="cb ${t.done?'done':''}"></div><span class="task-text ${t.done?'done':''}">${t.text}</span><span onclick="event.stopPropagation();delTask('${listKey}',${t.id})" class="action-btn">×</span></div>`).join('');
+}
+function toggleTask(k,id){const t=(S.tasks[k]||[]).find(x=>x.id===id);if(t){t.done=!t.done;save();}renderTaskList('tl-'+k,k);renderProgBlocks();updateTaskSummary();}
+function delTask(k,id){S.tasks[k]=(S.tasks[k]||[]).filter(x=>x.id!==id);save();renderTaskList('tl-'+k,k);renderProgBlocks();updateTaskSummary();}
+function addTask(k,inp){if(!inp||!inp.value.trim())return;(S.tasks[k]=S.tasks[k]||[]).push({id:S.nid++,text:inp.value.trim(),done:false});inp.value='';save();renderTaskList('tl-'+k,k);renderProgBlocks();updateTaskSummary();}
+function updateTaskSummary(){const all=Object.values(S.tasks).flat();const el=document.getElementById('tasks-summary');if(el)el.textContent=all.filter(t=>t.done).length+' / '+all.length+' complétées';}
+function renderTaches(){['week','admin','brand','biz','ops'].forEach(k=>renderTaskList('tl-'+k,k));updateTaskSummary();}
+
+function filterTalents(disc){S.talentFilter=disc;save();renderTalents();}
+function renderTalents(){
+const filtered=S.talentFilter?S.talents.filter(t=>t.discipline===S.talentFilter):S.talents;
+const totalFollowers=S.talents.reduce((s,t)=>s+(t.followers||0),0);
+document.getElementById('talent-kpis').innerHTML=`
+<div class="kpi"><div class="kpi-label">Total talents</div><div class="kpi-val">${S.talents.length}</div></div>
+<div class="kpi"><div class="kpi-label">Contrats actifs</div><div class="kpi-val" style="color:var(--accent)">${S.talents.filter(t=>t.contract==='actif').length}</div></div>
+<div class="kpi"><div class="kpi-label">Reach combiné</div><div class="kpi-val" style="font-size:18px">${totalFollowers>=1000?(totalFollowers/1000).toFixed(1)+'k':totalFollowers}</div><div class="kpi-sub">abonnés cumulés</div></div>
+<div class="kpi"><div class="kpi-label">Missions actives</div><div class="kpi-val" style="color:var(--gold)">${S.missions.filter(m=>m.status==='en_cours').length}</div></div>`;
+const list=document.getElementById('talent-list');
+if(!filtered.length){list.innerHTML='<div style="padding:20px;text-align:center;font-size:13px;color:var(--text3)">Aucun talent dans cette catégorie.</div>';return;}
+list.innerHTML=filtered.map(t=>{
+const initials=t.name.split(' ').filter(Boolean).slice(0,2).map(w=>w[0]).join('').toUpperCase();
+const bg=avatarColors[t.id%avatarColors.length];
+return`<div class="talent-row" onclick="openTalentDetail(${t.id})">
+<div class="avatar" style="background:${bg}">${initials}</div>
+<div class="talent-info"><div class="talent-name">${t.name}</div><div class="talent-meta">${t.discipline||''}${t.specialty?' · '+t.specialty:''}${t.location?' · '+t.location:''}</div></div>
+<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:130px">
+<span class="pill ${disciplineClass[t.discipline]||'p-inactive'}">${t.discipline||'—'}</span>
+<span class="pill ${contractClass[t.contract]||'p-inactive'}">${contractLabel[t.contract]||t.contract}</span>
+</div>
+<div style="font-size:12px;color:var(--text3);min-width:50px;text-align:right">${t.commission||0}%</div>
+<button class="action-btn" onclick="event.stopPropagation();editTalentById(${t.id})">✎</button>
+<button class="action-btn" onclick="event.stopPropagation();delTalent(${t.id})">×</button>
+</div>`;
+}).join('');
+}
+
+function openTalentDetail(id){
+const t=S.talents.find(x=>x.id===id);if(!t)return;
+S.openTalentId=id;save();
+document.getElementById('detail-talent-name').textContent=t.name;
+document.getElementById('detail-talent-body').innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+${drow('Discipline',t.discipline||'—')}${drow('Spécialité',t.specialty||'—')}
+${drow('Téléphone',t.phone||'—')}${drow('Email',t.email||'—')}
+${drow('Localisation',t.location||'—')}${drow('Instagram',t.instagram||'—')}
+${drow('Abonnés',(t.followers||0).toLocaleString('fr-FR'))}${drow('Commission',(t.commission||0)+'%')}
+${drow('Début contrat',t.start||'—')}${drow('Statut',contractLabel[t.contract]||t.contract)}
+${t.portfolio?`<div class="detail-row" style="grid-column:1/-1"><span class="detail-label">Portfolio</span><a href="${t.portfolio}" target="_blank" style="color:var(--accent)">${t.portfolio}</a></div>`:''}
+<div class="detail-row" style="grid-column:1/-1"><span class="detail-label">Notes</span><span>${t.notes||'—'}</span></div>
+<div class="detail-row" style="grid-column:1/-1"><span class="detail-label">Prochaine action</span><span style="color:var(--accent);font-weight:500">${t.next||'—'}</span></div>
+</div>`;
+renderTalentTasks(id);
+document.getElementById('talent-detail').classList.add('open');
+document.getElementById('talent-detail').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function renderTalentTasks(id){
+const t=S.talents.find(x=>x.id===id);if(!t)return;
+const el=document.getElementById('detail-talent-tasks');if(!el)return;
+if(!t.tasks||!t.tasks.length){el.innerHTML='<div style="font-size:13px;color:var(--text3);padding:4px 0 8px">Aucune tâche liée.</div>';return;}
+el.innerHTML=t.tasks.map(tk=>`<div class="task-row" onclick="toggleTalentTask(${id},${tk.id})"><div class="cb ${tk.done?'done':''}"></div><span class="task-text ${tk.done?'done':''}">${tk.text}</span><span onclick="event.stopPropagation();delTalentTask(${id},${tk.id})" class="action-btn">×</span></div>`).join('');
+}
+function addTalentTask(){
+const inp=document.getElementById('in-talent-task');if(!inp||!inp.value.trim())return;
+const id=S.openTalentId;const t=S.talents.find(x=>x.id===id);if(!t)return;
+if(!t.tasks)t.tasks=[];t.tasks.push({id:S.nid++,text:inp.value.trim(),done:false});
+inp.value='';save();renderTalentTasks(id);
+}
+function toggleTalentTask(tid,tkid){const t=S.talents.find(x=>x.id===tid);if(!t)return;const tk=(t.tasks||[]).find(x=>x.id===tkid);if(tk){tk.done=!tk.done;save();renderTalentTasks(tid);}}
+function delTalentTask(tid,tkid){const t=S.talents.find(x=>x.id===tid);if(!t)return;t.tasks=(t.tasks||[]).filter(x=>x.id!==tkid);save();renderTalentTasks(tid);}
+function closeTalentDetail(){document.getElementById('talent-detail').classList.remove('open');S.openTalentId=null;save();}
+function drow(label,val){return`<div class="detail-row"><span class="detail-label">${label}</span><span>${val}</span></div>`;}
+
+let editTalentId=null;
+function openTalentModal(id=null){
+editTalentId=id;
+const t=id?S.talents.find(x=>x.id===id):null;
+document.getElementById('modal-talent-title').textContent=t?'Modifier le talent':'Nouveau talent';
+['name','discipline','specialty','phone','email','location','contract','commission','start','instagram','portfolio','followers','notes','next'].forEach(f=>{const el=document.getElementById('t-'+f);if(el)el.value=t?(t[f]||''):''});
+if(!t){document.getElementById('t-start').value=new Date().toISOString().slice(0,10);document.getElementById('t-contract').value='actif';document.getElementById('t-commission').value='20';}
+document.getElementById('modal-talent').classList.add('open');
+}
+function closeTalentModal(){document.getElementById('modal-talent').classList.remove('open');editTalentId=null;}
+function editTalentById(id){openTalentModal(id);}
+function saveTalent(){
+const name=document.getElementById('t-name').value.trim();if(!name){alert('Le nom est obligatoire.');return;}
+const fields=['name','discipline','specialty','phone','email','location','contract','instagram','portfolio','notes','next'];
+const obj={};fields.forEach(f=>{obj[f]=document.getElementById('t-'+f).value;});
+obj.commission=parseFloat(document.getElementById('t-commission').value)||0;
+obj.followers=parseInt(document.getElementById('t-followers').value)||0;
+obj.start=document.getElementById('t-start').value;
+if(editTalentId){const idx=S.talents.findIndex(x=>x.id===editTalentId);if(idx>-1){const ex=S.talents[idx];S.talents[idx]={...ex,...obj};}}
+else{obj.id=S.nid++;obj.tasks=[];S.talents.push(obj);}
+save();closeTalentModal();renderTalents();
+if(S.openTalentId===editTalentId&&editTalentId)openTalentDetail(editTalentId);
+toast('Talent enregistré ✓');
+}
+function delTalent(id){if(!confirm('Supprimer ce talent ?'))return;S.talents=S.talents.filter(t=>t.id!==id);save();closeTalentDetail();renderTalents();toast('Supprimé');}
+
+function setMissionTab(tab,btn){
+S.missionTab=tab;save();
+document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+if(btn)btn.classList.add('active');
+renderMissionList();
+}
+function renderMissions(){
+const total=S.missions.length;
+const enCours=S.missions.filter(m=>m.status==='en_cours').length;
+const totalVal=S.missions.reduce((s,m)=>s+(m.amount||0),0);
+const totalCom=S.missions.reduce((s,m)=>s+Math.round((m.amount||0)*(m.commission||0)/100),0);
+document.getElementById('mission-kpis').innerHTML=`
+<div class="kpi"><div class="kpi-label">Total missions</div><div class="kpi-val">${total}</div></div>
+<div class="kpi"><div class="kpi-label">En cours</div><div class="kpi-val" style="color:var(--accent)">${enCours}</div></div>
+<div class="kpi"><div class="kpi-label">Valeur totale</div><div class="kpi-val" style="font-size:18px">${(totalVal/1000).toFixed(0)}k <span style="font-size:12px;font-weight:400;color:var(--text3)">FCFA</span></div></div>
+<div class="kpi"><div class="kpi-label">Commissions estimées</div><div class="kpi-val" style="color:var(--gold);font-size:18px">${(totalCom/1000).toFixed(0)}k <span style="font-size:12px;font-weight:400;color:var(--text3)">FCFA</span></div></div>`;
+renderMissionList();
+}
+function renderMissionList(){
+const tab=S.missionTab||'all';
+const filtered=tab==='all'?S.missions:S.missions.filter(m=>m.status===tab);
+const list=document.getElementById('mission-list');
+if(!filtered.length){list.innerHTML='<div style="padding:20px;text-align:center;font-size:13px;color:var(--text3)">Aucune mission dans cette catégorie.</div>';return;}
+list.innerHTML=filtered.map(m=>{
+const com=Math.round((m.amount||0)*(m.commission||0)/100);
+return`<div class="mission-row">
+<div class="mission-info">
+<div class="mission-name">${m.title}</div>
+<div class="mission-meta">${m.talent||'—'} · ${m.client||'—'} · ${m.type||''}</div>
+${m.notes?`<div style="font-size:11px;color:var(--text3);margin-top:3px;line-height:1.4">${m.notes.slice(0,90)}${m.notes.length>90?'…':''}</div>`:''}
+</div>
+<div class="mission-status">
+<span class="pill ${missionStatusClass[m.status]}">${missionStatusLabel[m.status]}</span>
+<span class="pill ${paidClass[m.paid]}" style="margin-top:3px">${paidLabel[m.paid]}</span>
+<span style="font-size:11px;color:var(--text3);margin-top:2px">${com?(com/1000).toFixed(0)+'k FCFA com.':''}</span>
+</div>
+<button class="action-btn" onclick="editMissionById(${m.id})">✎</button>
+<button class="action-btn" onclick="delMission(${m.id})">×</button>
+</div>`;
+}).join('');
+}
+let editMissionId=null;
+function openMissionModal(id=null){
+editMissionId=id;
+const m=id?S.missions.find(x=>x.id===id):null;
+document.getElementById('modal-mission-title').textContent=m?'Modifier la mission':'Nouvelle mission';
+['title','talent','client','type','status','amount','commission','start','end','paid','notes'].forEach(f=>{const el=document.getElementById('m-'+f);if(el)el.value=m?(m[f]||''):''});
+if(!m){document.getElementById('m-start').value=new Date().toISOString().slice(0,10);document.getElementById('m-commission').value='20';document.getElementById('m-paid').value='non';document.getElementById('m-status').value='en_attente';}
+document.getElementById('modal-mission').classList.add('open');
+}
+function closeMissionModal(){document.getElementById('modal-mission').classList.remove('open');editMissionId=null;}
+function editMissionById(id){openMissionModal(id);}
+function saveMission(){
+const title=document.getElementById('m-title').value.trim();if(!title){alert('Le titre est obligatoire.');return;}
+const fields=['title','talent','client','type','status','paid','notes'];
+const obj={};fields.forEach(f=>{obj[f]=document.getElementById('m-'+f).value;});
+obj.amount=parseInt(document.getElementById('m-amount').value)||0;
+obj.commission=parseFloat(document.getElementById('m-commission').value)||0;
+obj.start=document.getElementById('m-start').value;obj.end=document.getElementById('m-end').value;
+if(editMissionId){const idx=S.missions.findIndex(x=>x.id===editMissionId);if(idx>-1)S.missions[idx]={...S.missions[idx],...obj};}
+else{obj.id=S.nid++;S.missions.push(obj);}
+save();closeMissionModal();renderMissions();toast('Mission enregistrée ✓');
+}
+function delMission(id){if(!confirm('Supprimer cette mission ?'))return;S.missions=S.missions.filter(m=>m.id!==id);save();renderMissions();toast('Supprimée');}
+
+function renderRevenus(){
+const total=S.revenues.reduce((s,r)=>s+(r.amount||0),0);
+const encaisse=S.revenues.filter(r=>r.paid==='oui').reduce((s,r)=>s+(r.amount||0),0);
+const commissions=S.revenues.filter(r=>r.type==='commission').reduce((s,r)=>s+(r.amount||0),0);
+document.getElementById('rev-kpis').innerHTML=`
+<div class="kpi"><div class="kpi-label">Total revenus</div><div class="kpi-val" style="font-size:18px">${(total/1000).toFixed(1)}k <span style="font-size:12px;font-weight:400;color:var(--text3)">FCFA</span></div></div>
+<div class="kpi"><div class="kpi-label">Encaissé</div><div class="kpi-val" style="color:var(--ok);font-size:18px">${(encaisse/1000).toFixed(1)}k</div></div>
+<div class="kpi"><div class="kpi-label">Commissions talents</div><div class="kpi-val" style="color:var(--gold);font-size:18px">${(commissions/1000).toFixed(1)}k</div></div>
+<div class="kpi"><div class="kpi-label">Nb. entrées</div><div class="kpi-val">${S.revenues.length}</div></div>`;
+const list=document.getElementById('rev-list');
+const typeLabel={commission:'Commission',prestation:'Prestation',retainer:'Retainer',autre:'Autre'};
+if(!S.revenues.length){list.innerHTML='<div style="padding:20px;text-align:center;font-size:13px;color:var(--text3)">Aucune entrée de revenu.</div>';return;}
+list.innerHTML=S.revenues.slice().reverse().map(r=>`
+<div class="rev-row">
+<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500">${r.desc}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${typeLabel[r.type]||r.type}${r.talent?' · '+r.talent:''}${r.date?' · '+r.date:''}</div></div>
+<div style="font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:600;color:var(--accent);white-space:nowrap">${(r.amount||0).toLocaleString('fr-FR')} FCFA</div>
+<span class="pill ${paidClass[r.paid]}" style="margin-left:8px">${paidLabel[r.paid]}</span>
+<button class="action-btn" onclick="delRev(${r.id})">×</button>
+</div>`).join('');
+}
+function openRevModal(){document.getElementById('modal-rev').classList.add('open');document.getElementById('r-date').value=new Date().toISOString().slice(0,10);document.getElementById('r-paid').value='oui';['r-desc','r-amount','r-talent'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('r-type').value='commission';}
+function closeRevModal(){document.getElementById('modal-rev').classList.remove('open');}
+function saveRev(){
+const desc=document.getElementById('r-desc').value.trim();if(!desc){alert('Description obligatoire.');return;}
+const obj={id:S.nid++,desc,amount:parseInt(document.getElementById('r-amount').value)||0,type:document.getElementById('r-type').value,date:document.getElementById('r-date').value,paid:document.getElementById('r-paid').value,talent:document.getElementById('r-talent').value};
+S.revenues.push(obj);
+if(obj.paid==='oui'&&obj.date){const m=new Date(obj.date).getMonth();S.rev.r[m]=(S.rev.r[m]||0)+obj.amount;}
+save();closeRevModal();renderRevenus();toast('Revenu ajouté ✓');
+}
+function delRev(id){if(!confirm('Supprimer ?'))return;S.revenues=S.revenues.filter(r=>r.id!==id);save();renderRevenus();toast('Supprimé');}
+
+function renderNotes(){
+const el=document.getElementById('notes-list');
+if(!S.notes.length){el.innerHTML='<div class="card" style="text-align:center;padding:32px;color:var(--text3)">Aucune note. Commence par créer un compte-rendu de réunion.</div>';return;}
+el.innerHTML=S.notes.map(n=>`<div class="note-card"><div class="note-header"><div class="note-title">${n.title}</div><div style="display:flex;align-items:center;gap:10px"><span style="font-size:11px;color:var(--text3)">${n.date}</span><button class="action-btn" onclick="delNote(${n.id})">×</button></div></div><textarea class="notes-area" onchange="updNote(${n.id},this.value)">${n.content}</textarea></div>`).join('');
+}
+function addNote(){const t=prompt('Titre (ex: Réunion équipe — semaine 20) :');if(!t)return;S.notes.unshift({id:S.nid++,date:new Date().toISOString().slice(0,10),title:t,content:''});save();renderNotes();}
+function updNote(id,v){const n=S.notes.find(x=>x.id===id);if(n){n.content=v;save();}}
+function delNote(id){if(!confirm('Supprimer cette note ?'))return;S.notes=S.notes.filter(n=>n.id!==id);save();renderNotes();}
+
+document.getElementById('month-sel').value=S.month;
+renderVue();
+</script>
+</body>
+</html>
