@@ -129,6 +129,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);
 .two-col{grid-template-columns:1fr}
 .form-grid{grid-template-columns:1fr}
 }
+.sync-badge{display:flex;align-items:center;gap:7px;font-size:10px;color:#888780;padding:0 20px 14px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#444441;flex-shrink:0}
+.sync-badge[data-status="synced"] .sync-dot{background:var(--ok);box-shadow:0 0 6px rgba(29,158,117,.5)}
+.sync-badge[data-status="saving"] .sync-dot,.sync-badge[data-status="connecting"] .sync-dot{background:var(--gold);animation:pulse 1s infinite}
+.sync-badge[data-status="error"] .sync-dot,.sync-badge[data-status="offline"] .sync-dot{background:var(--danger)}
+.sync-badge[data-status="auth"] .sync-dot,.sync-badge[data-status="setup"] .sync-dot{background:var(--info)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.auth-overlay{position:fixed;inset:0;background:rgba(11,15,20,.92);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}
+.auth-overlay.open{display:flex}
+.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:28px 32px;width:100%;max-width:380px}
+.auth-title{font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px}
+.auth-sub{font-size:13px;color:var(--text3);margin-bottom:22px;line-height:1.5}
+.auth-error{font-size:12px;color:var(--danger);min-height:18px;margin-bottom:10px}
+.auth-field{margin-bottom:14px}
+.auth-field label{display:block;font-size:11px;color:var(--text3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em}
+.auth-field input{width:100%;font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);outline:none}
+.auth-field input:focus{border-color:var(--accent)}
+.auth-submit{width:100%;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:11px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;margin-top:6px}
+.auth-submit:hover{background:var(--accent2)}
+.auth-submit:disabled{opacity:.6;cursor:not-allowed}
+.auth-hint{font-size:11px;color:var(--text3);margin-top:14px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -149,6 +170,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);
 <button class="nav-item" onclick="nav('talents',this)"><div class="nav-dot"></div><span>Fiches talents</span></button>
 <button class="nav-item" onclick="nav('missions',this)"><div class="nav-dot"></div><span>Missions & projets</span></button>
 </nav>
+<div class="sync-badge" id="sync-status" data-status="connecting"><span class="sync-dot"></span><span>Connexion…</span></div>
 <div class="sidebar-bottom">
 <button class="export-btn" onclick="exportData()">⬇ Exporter JSON</button>
 <label class="import-label">⬆ Importer JSON<input type="file" accept=".json" style="display:none" onchange="importData(this)"></label>
@@ -343,6 +365,25 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);
 
 <div id="toast"></div>
 
+<div class="auth-overlay" id="auth-overlay">
+<div class="auth-card">
+<div class="auth-title">Neemesis Dashboard</div>
+<div class="auth-sub">Connectez-vous pour accéder aux données partagées en temps réel.</div>
+<form onsubmit="submitAuth(event)">
+<div class="auth-error" id="auth-error"></div>
+<div class="auth-field"><label>Email</label><input type="email" id="auth-email" required autocomplete="username" placeholder="equipe@neemesis.co"></div>
+<div class="auth-field"><label>Mot de passe</label><input type="password" id="auth-password" required autocomplete="current-password"></div>
+<button type="submit" class="auth-submit" id="auth-submit">Se connecter</button>
+</form>
+<p class="auth-hint">Compte créé dans la console Firebase (Authentication → Users).</p>
+</div>
+</div>
+
+<script src="firebase-config.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore-compat.js"></script>
+<script src="js/sync.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
 const KEY='neemesis_v1';
@@ -380,9 +421,15 @@ notes:[{id:401,date:'2025-04-08',title:'Réunion équipe — semaine 14',content
 rev:{r:[0,0,0,70000,0,0,0,0,0,0,0,0],o:[300000,300000,400000,400000,500000,500000,600000,600000,700000,700000,800000,800000]}
 };}
 
-let S;
-try{S=JSON.parse(localStorage.getItem(KEY));if(!S||!S.tasks)S=defaultData();}catch(e){S=defaultData();}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+let S=defaultData();
+function activePageName(){const p=document.querySelector('.page.active');return p?p.id.replace('page-',''):'vue';}
+function onDataReady(){
+const now=new Date();
+document.getElementById('date-lbl').textContent=DAYS[now.getDay()]+' '+now.getDate()+' '+MONTHS[now.getMonth()]+' '+now.getFullYear();
+document.getElementById('month-sel').value=S.month;
+renderPage(activePageName());
+}
+function onDataRemote(){renderPage(activePageName());}
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
@@ -402,10 +449,6 @@ if(n==='talents')renderTalents();
 if(n==='missions')renderMissions();
 }
 
-const now=new Date();
-document.getElementById('date-lbl').textContent=DAYS[now.getDay()]+' '+now.getDate()+' '+MONTHS[now.getMonth()]+' '+now.getFullYear();
-document.getElementById('month-sel').value=S.month;
-
 function exportData(){
 const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
 const a=document.createElement('a');a.href=URL.createObjectURL(blob);
@@ -417,7 +460,7 @@ const file=input.files[0];if(!file)return;
 const reader=new FileReader();
 reader.onload=e=>{
 try{const data=JSON.parse(e.target.result);if(!data.tasks)throw new Error();
-S=data;save();renderPage(document.querySelector('.page.active').id.replace('page-',''));toast('Import réussi ✓');}
+S=data;save();renderPage(activePageName());toast('Import réussi ✓');}
 catch{toast('Fichier invalide ✗');}
 };
 reader.readAsText(file);input.value='';
@@ -670,8 +713,7 @@ function addNote(){const t=prompt('Titre (ex: Réunion équipe — semaine 20) :
 function updNote(id,v){const n=S.notes.find(x=>x.id===id);if(n){n.content=v;save();}}
 function delNote(id){if(!confirm('Supprimer cette note ?'))return;S.notes=S.notes.filter(n=>n.id!==id);save();renderNotes();}
 
-document.getElementById('month-sel').value=S.month;
-renderVue();
+NeemSync.boot();
 </script>
 </body>
 </html>
