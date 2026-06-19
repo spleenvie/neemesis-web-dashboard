@@ -9,11 +9,14 @@ const NeemSync = (() => {
   let ignoreRemote = false;
   let ignoreTimer = null;
   let status = 'offline';
+  let lastError = '';
   let workspaceId = 'neemesis-main';
   let configured = false;
+  let authLoading = false;
 
-  function setStatus(next) {
+  function setStatus(next, detail) {
     status = next;
+    if (detail) lastError = detail;
     const el = document.getElementById('sync-status');
     if (!el) return;
     el.dataset.status = next;
@@ -28,6 +31,7 @@ const NeemSync = (() => {
       error: 'Erreur sync'
     };
     if (labelEl) labelEl.textContent = labels[next] || next;
+    el.title = lastError || labels[next] || '';
   }
 
   function isConfigured() {
@@ -66,16 +70,23 @@ const NeemSync = (() => {
 
   function formatFirebaseError(e) {
     const code = e && e.code ? e.code : '';
+    const msg = e && e.message ? e.message : String(e);
     if (code === 'permission-denied') {
-      return 'Accès Firestore refusé — publiez firestore.rules dans la console Firebase.';
+      return 'Firestore: accès refusé. Vérifiez que vous êtes connecté et que les règles sont publiées.';
     }
     if (code === 'unauthenticated') {
       return 'Session expirée — reconnectez-vous.';
     }
+    if (code === 'failed-precondition' || code === 'not-found') {
+      return 'Firestore: base non trouvée. Créez Firestore (mode production) dans la console Firebase.';
+    }
     if (code === 'unavailable' || code === 'deadline-exceeded') {
       return 'Firestore indisponible — vérifiez votre connexion.';
     }
-    return 'Impossible de charger les données cloud';
+    if (/REFERER|API_KEY|API key/i.test(msg)) {
+      return 'Clé API bloquée. Dans Google Cloud → Credentials, autorisez https://spleenvie.github.io/*';
+    }
+    return (code ? code + ' — ' : '') + msg;
   }
 
   function ensureState() {
@@ -96,11 +107,17 @@ const NeemSync = (() => {
     return db.collection('workspaces').doc(workspaceId);
   }
 
+  async function ensureAuthReady() {
+    const user = auth && auth.currentUser;
+    if (!user) throw new Error('Utilisateur non authentifié');
+    await user.getIdToken(true);
+  }
+
   async function seedIfEmpty() {
     const snap = await docRef().get();
     if (snap.exists) return;
     const payload = typeof window.emptyData === 'function' ? window.emptyData() : null;
-    if (!payload) return;
+    if (!payload) throw new Error('emptyData() indisponible — vérifiez que js/data.js est chargé');
     ignoreRemote = true;
     await docRef().set({
       data: payload,
@@ -126,10 +143,20 @@ const NeemSync = (() => {
       },
       (err) => {
         console.error('Firestore listener error', err);
-        setStatus('error');
-        toast(formatFirebaseError(err));
+        const detail = formatFirebaseError(err);
+        setStatus('error', detail);
+        toast(detail);
       }
     );
+  }
+
+  function renderApp() {
+    try {
+      if (typeof window.onDataReady === 'function') window.onDataReady();
+    } catch (e) {
+      console.error('Render error', e);
+      toast('Erreur affichage: ' + e.message);
+    }
   }
 
   async function afterAuth() {
@@ -137,6 +164,7 @@ const NeemSync = (() => {
     showAuth(false);
     showApp(true);
     try {
+      await ensureAuthReady();
       await seedIfEmpty();
       const snap = await docRef().get();
       if (snap.exists) {
@@ -148,13 +176,14 @@ const NeemSync = (() => {
       }
       startListener();
       setStatus('synced');
-      if (typeof window.onDataReady === 'function') window.onDataReady();
+      renderApp();
     } catch (e) {
       console.error('NeemSync afterAuth error:', e);
       ensureState();
-      setStatus('error');
-      toast(formatFirebaseError(e));
-      if (typeof window.onDataReady === 'function') window.onDataReady();
+      const detail = formatFirebaseError(e);
+      setStatus('error', detail);
+      toast(detail);
+      renderApp();
     }
   }
 
@@ -163,6 +192,7 @@ const NeemSync = (() => {
       firebase.initializeApp(window.FIREBASE_CONFIG);
       db = firebase.firestore();
       auth = firebase.auth();
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
       configured = true;
     }
   }
@@ -171,7 +201,7 @@ const NeemSync = (() => {
     setStatus(isConfigured() ? 'auth' : 'setup');
     window.S = loadLocal() || (typeof window.emptyData === 'function' ? window.emptyData() : {});
     showApp(true);
-    if (typeof window.onDataReady === 'function') window.onDataReady();
+    renderApp();
     if (isConfigured()) showAuth(true);
   }
 
@@ -189,7 +219,13 @@ const NeemSync = (() => {
 
     auth.onAuthStateChanged(async (user) => {
       if (user) {
-        await afterAuth();
+        if (authLoading) return;
+        authLoading = true;
+        try {
+          await afterAuth();
+        } finally {
+          authLoading = false;
+        }
       } else {
         setStatus('auth');
         showAuth(true);
@@ -207,6 +243,7 @@ const NeemSync = (() => {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(async () => {
       try {
+        await ensureAuthReady();
         ignoreRemote = true;
         if (ignoreTimer) clearTimeout(ignoreTimer);
         ignoreTimer = setTimeout(() => {
@@ -220,8 +257,9 @@ const NeemSync = (() => {
         setStatus('synced');
       } catch (e) {
         console.error(e);
-        setStatus('error');
-        toast('Échec de l\'enregistrement cloud');
+        const detail = formatFirebaseError(e);
+        setStatus('error', detail);
+        toast('Échec enregistrement: ' + detail);
       }
     }, SAVE_DEBOUNCE_MS);
   }
@@ -251,14 +289,21 @@ const NeemSync = (() => {
     window.S = empty;
     try { localStorage.removeItem(KEY); } catch (e) {}
     if (db && auth && auth.currentUser) {
-      ignoreRemote = true;
-      await docRef().set({
-        data: empty,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      try {
+        await ensureAuthReady();
+        ignoreRemote = true;
+        await docRef().set({
+          data: empty,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        setStatus('synced');
+      } catch (e) {
+        const detail = formatFirebaseError(e);
+        setStatus('error', detail);
+        toast(detail);
+      }
     }
-    setStatus(db && auth && auth.currentUser ? 'synced' : status);
-    if (typeof window.onDataReady === 'function') window.onDataReady();
+    renderApp();
     toast('Tableau réinitialisé ✓');
   }
 
