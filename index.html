@@ -423,7 +423,7 @@ notes:[{id:401,date:'2025-04-08',title:'Réunion équipe — semaine 14',content
 rev:{r:[0,0,0,70000,0,0,0,0,0,0,0,0],o:[300000,300000,400000,400000,500000,500000,600000,600000,700000,700000,800000,800000]}
 };}
 
-let S=null;
+var S=null;
 function activePageName(){const p=document.querySelector('.page.active');return p?p.id.replace('page-',''):'vue';}
 function onDataReady(){
 if(!S||!S.tasks)S=emptyData();

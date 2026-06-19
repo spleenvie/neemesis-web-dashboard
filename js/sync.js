@@ -96,11 +96,17 @@ const NeemSync = (() => {
     return window.S;
   }
 
-  function applyRemote(data) {
-    if (!data || !data.tasks) return;
+  function setState(data) {
     window.S = data;
+  }
+
+  function applyRemote(data, options) {
+    if (!data || !data.tasks) return;
+    setState(data);
     backupLocal(data);
-    if (typeof window.onDataRemote === 'function') window.onDataRemote();
+    if (!options || !options.silent) {
+      if (typeof window.onDataRemote === 'function') window.onDataRemote();
+    }
   }
 
   function docRef() {
@@ -169,7 +175,7 @@ const NeemSync = (() => {
       const snap = await docRef().get();
       if (snap.exists) {
         const payload = snap.data().data;
-        if (payload && payload.tasks) applyRemote(payload);
+        if (payload && payload.tasks) applyRemote(payload, { silent: true });
         else ensureState();
       } else {
         ensureState();
@@ -235,7 +241,7 @@ const NeemSync = (() => {
   }
 
   function persist(data) {
-    window.S = data;
+    setState(data);
     backupLocal(data);
     if (!db || !auth || !auth.currentUser) return;
 
@@ -286,7 +292,7 @@ const NeemSync = (() => {
   async function resetWorkspace() {
     if (!confirm('Supprimer toutes les données et repartir à zéro ? Action irréversible pour toute l\'équipe.')) return;
     const empty = typeof window.emptyData === 'function' ? window.emptyData() : {};
-    window.S = empty;
+    setState(empty);
     try { localStorage.removeItem(KEY); } catch (e) {}
     if (db && auth && auth.currentUser) {
       try {
