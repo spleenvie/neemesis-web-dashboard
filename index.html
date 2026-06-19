@@ -172,6 +172,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);
 </nav>
 <div class="sync-badge" id="sync-status" data-status="connecting"><span class="sync-dot"></span><span>Connexion…</span></div>
 <div class="sidebar-bottom">
+<button class="export-btn" onclick="resetWorkspace()" style="background:rgba(153,60,29,0.12);border-color:rgba(153,60,29,0.25);color:#c45a3a;margin-bottom:8px">↺ Réinitialiser le tableau</button>
 <button class="export-btn" onclick="exportData()">⬇ Exporter JSON</button>
 <label class="import-label">⬆ Importer JSON<input type="file" accept=".json" style="display:none" onchange="importData(this)"></label>
 <div class="sidebar-credit">Neemesis · Cotonou & Londres</div>
@@ -398,6 +399,14 @@ const missionStatusClass={'en_attente':'p-paused','en_cours':'p-active','termine
 const paidClass={'oui':'p-active','non':'p-ended','partiel':'p-paused'};
 const paidLabel={'oui':'Payé','non':'Non payé','partiel':'Partiel'};
 
+function emptyData(){return{
+month:new Date().getMonth(),nid:1,talentFilter:'',missionTab:'all',openTalentId:null,
+tasks:{week:[],admin:[],brand:[],biz:[],ops:[]},
+talents:[],missions:[],revenues:[],notes:[],
+rev:{r:[0,0,0,0,0,0,0,0,0,0,0,0],o:[0,0,0,0,0,0,0,0,0,0,0,0]}
+};}
+window.emptyData=emptyData;
+
 function defaultData(){return{
 month:new Date().getMonth(),nid:200,talentFilter:'',missionTab:'all',openTalentId:null,
 tasks:{
@@ -421,7 +430,7 @@ notes:[{id:401,date:'2025-04-08',title:'Réunion équipe — semaine 14',content
 rev:{r:[0,0,0,70000,0,0,0,0,0,0,0,0],o:[300000,300000,400000,400000,500000,500000,600000,600000,700000,700000,800000,800000]}
 };}
 
-let S=defaultData();
+let S=null;
 function activePageName(){const p=document.querySelector('.page.active');return p?p.id.replace('page-',''):'vue';}
 function onDataReady(){
 const now=new Date();

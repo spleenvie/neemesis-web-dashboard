@@ -77,8 +77,7 @@ const NeemSync = (() => {
   async function seedIfEmpty() {
     const snap = await docRef().get();
     if (snap.exists) return;
-    const local = loadLocal();
-    const payload = local || (typeof window.defaultData === 'function' ? window.defaultData() : null);
+    const payload = typeof window.emptyData === 'function' ? window.emptyData() : null;
     if (!payload) return;
     ignoreRemote = true;
     await docRef().set({
@@ -121,7 +120,7 @@ const NeemSync = (() => {
       if (snap.exists) {
         applyRemote(snap.data().data);
       } else if (!window.S) {
-        window.S = typeof window.defaultData === 'function' ? window.defaultData() : loadLocal();
+        window.S = typeof window.emptyData === 'function' ? window.emptyData() : loadLocal();
       }
       startListener();
       setStatus('synced');
@@ -144,7 +143,7 @@ const NeemSync = (() => {
 
   function bootLocalOnly() {
     setStatus(isConfigured() ? 'auth' : 'setup');
-    window.S = loadLocal() || (typeof window.defaultData === 'function' ? window.defaultData() : {});
+    window.S = loadLocal() || (typeof window.emptyData === 'function' ? window.emptyData() : {});
     showApp(true);
     if (typeof window.onDataReady === 'function') window.onDataReady();
     if (isConfigured()) showAuth(true);
@@ -220,11 +219,32 @@ const NeemSync = (() => {
     setStatus('auth');
   }
 
-  return { boot, persist, login, logout, getStatus: () => status, isConfigured };
+  async function resetWorkspace() {
+    if (!confirm('Supprimer toutes les données et repartir à zéro ? Action irréversible pour toute l\'équipe.')) return;
+    const empty = typeof window.emptyData === 'function' ? window.emptyData() : {};
+    window.S = empty;
+    try { localStorage.removeItem(KEY); } catch (e) {}
+    if (db && auth && auth.currentUser) {
+      ignoreRemote = true;
+      await docRef().set({
+        data: empty,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    setStatus(db && auth && auth.currentUser ? 'synced' : status);
+    if (typeof window.onDataReady === 'function') window.onDataReady();
+    toast('Tableau réinitialisé ✓');
+  }
+
+  return { boot, persist, login, logout, resetWorkspace, getStatus: () => status, isConfigured };
 })();
 
 function save() {
   NeemSync.persist(window.S);
+}
+
+function resetWorkspace() {
+  NeemSync.resetWorkspace();
 }
 
 async function submitAuth(event) {
